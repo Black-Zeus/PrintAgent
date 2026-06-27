@@ -1,0 +1,14 @@
+# Agente de impresión térmica CeciChic
+# Instalar con: pip install -r requirements.txt
+
+# Comunicación con el servidor
+requests==2.32.3
+
+# Impresión ESC/POS (impresoras térmicas)
+python-escpos==3.1
+
+# Portal web local
+flask==3.1.0
+
+# Servicio Windows (solo en Windows)
+pywin32==308; sys_platform == "win32"
