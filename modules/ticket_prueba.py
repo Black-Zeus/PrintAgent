@@ -17,7 +17,7 @@ def render(printer, payload: dict, template: dict) -> None:
     printer.set(bold=True, double_height=True)
     printer.text("PRUEBA DE IMPRESION\n")
     printer.set(bold=False, double_height=False)
-    printer.text("CeciChic Print Agent\n")
+    printer.text("GestionCom Print Agent\n")
     printer.text(separator() + "\n")
 
     printer.set(align="left")

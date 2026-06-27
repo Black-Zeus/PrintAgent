@@ -1,5 +1,5 @@
 """
-Punto de entrada del agente CeciChic Print Agent.
+Punto de entrada del agente GestionCom Print Agent.
 
 Uso:
   python agent.py run              → Ejecutar en foreground (pruebas)
@@ -48,7 +48,7 @@ def run_foreground(with_portal: bool = True) -> None:
     import template_manager
 
     logger.info("=" * 50)
-    logger.info("CeciChic Print Agent — Modo Foreground")
+    logger.info("GestionCom Print Agent — Modo Foreground")
     logger.info("=" * 50)
 
     if not config_manager.is_configured():

@@ -20,7 +20,7 @@ logger = logging.getLogger("agent.portal")
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 app = Flask(__name__, template_folder=str(TEMPLATES_DIR))
-app.secret_key = "cecichic-print-agent-local"
+app.secret_key = "gestioncom-print-agent-local"
 
 
 @app.route("/")
@@ -75,7 +75,7 @@ def test_print():
 @app.route("/api/status")
 def api_status():
     return jsonify({
-        "agent": "CeciChic Print Agent",
+        "agent": "GestionCom Print Agent",
         "state": poller.state,
         "config": {
             "server_url": config_manager.get("server_url"),

@@ -1,4 +1,4 @@
-# Guía de instalación — CeciChic Print Agent
+# Guía de instalación — GestionCom Print Agent
 
 ## Requisitos previos
 
@@ -6,20 +6,20 @@
 - Python 3.11 o superior → [python.org/downloads](https://www.python.org/downloads/)
   - Marcar **"Add Python to PATH"** durante la instalación
 - Impresora térmica con driver instalado en Windows (USB, red o Bluetooth)
-- Acceso a la red donde corre el servidor CeciChic
+- Acceso a la red donde corre el servidor GestionCom
 - Clave de autorización del punto de venta (generada desde el sistema, formato `XXXX-XXXX-XXXX-XXXX`)
 
 ---
 
 ## Opción A — Instalación rápida con script (recomendada)
 
-1. Copia la carpeta `PrintAgent` en el equipo donde está la impresora (ej. `C:\CeciChic\PrintAgent`).
+1. Copia la carpeta `PrintAgent` en el equipo donde está la impresora (ej. `C:\GestionCom\PrintAgent`).
 
 2. Abre una terminal **como Administrador** (`cmd` o PowerShell → botón derecho → "Ejecutar como administrador").
 
 3. Navega a la carpeta:
    ```bat
-   cd C:\CeciChic\PrintAgent
+   cd C:\GestionCom\PrintAgent
    ```
 
 4. Ejecuta el instalador:
@@ -31,7 +31,7 @@
    - Verifica que Python esté instalado
    - Instala las dependencias (`pip install -r requirements.txt`)
    - Crea `config.json` con valores por defecto
-   - Instala el servicio Windows `CeciChicPrintAgent`
+   - Instala el servicio Windows `GestionComPrintAgent`
 
 5. Una vez instalado, el portal se abre en el navegador en `http://localhost:8765/config`. Completa la configuración (ver sección **Configuración inicial** más abajo).
 
@@ -42,7 +42,7 @@
 ### 1. Instalar dependencias
 
 ```bat
-cd C:\CeciChic\PrintAgent
+cd C:\GestionCom\PrintAgent
 pip install -r requirements.txt
 ```
 
@@ -65,7 +65,7 @@ Abre una terminal **como Administrador** y ejecuta:
 python agent.py install
 ```
 
-Deberías ver: `Installed service CeciChicPrintAgent`
+Deberías ver: `Installed service GestionComPrintAgent`
 
 ---
 
@@ -83,7 +83,7 @@ Completa los campos:
 
 | Campo | Valor de ejemplo |
 |-------|-----------------|
-| URL del servidor | `http://192.168.1.100` o `https://gestion.cecichic.cl` |
+| URL del servidor | `http://192.168.1.100` o `https://gestion.miempresa.cl` |
 | Clave de autorización | `A1B2-C3D4-E5F6-G7H8` (obtenida desde el sistema en *Puntos de venta → Generar clave*) |
 | Impresora | Selecciona de la lista o usa `auto` para detección automática |
 | Puerto del portal | `8765` (no cambiar salvo conflicto) |
@@ -109,7 +109,7 @@ El servicio arranca automáticamente con Windows. Para verificar:
 python agent.py status
 ```
 
-También visible en el panel de Servicios de Windows (`services.msc`) como **CeciChic Print Agent**.
+También visible en el panel de Servicios de Windows (`services.msc`) como **GestionCom Print Agent**.
 
 ### En primer plano (pruebas / desarrollo)
 
@@ -125,7 +125,7 @@ El log aparece en la consola. Detener con `Ctrl+C`.
 
 Desde el dashboard (`http://localhost:8765`) pulsa el botón **"Imprimir ticket de prueba"**. El ticket de prueba muestra la configuración actual del agente.
 
-También puedes generar un ticket de prueba desde el sistema CeciChic en *Templates de impresión*.
+También puedes generar un ticket de prueba desde el sistema GestionCom en *Templates de impresión*.
 
 ---
 
@@ -184,7 +184,7 @@ python agent.py run
 
 - Verifica que la URL del servidor no tenga barra al final.
 - Verifica acceso de red: `ping <ip-del-servidor>`.
-- Verifica que el servidor CeciChic esté corriendo.
+- Verifica que el servidor GestionCom esté corriendo.
 - Si el servidor usa HTTPS con certificado autofirmado, configura la URL con `http://` o agrega el certificado como confiable en Windows.
 
 ### "Access denied" al instalar el servicio
@@ -193,7 +193,7 @@ Abre la terminal **como Administrador** y vuelve a ejecutar `python agent.py ins
 
 ### El servicio no arranca automáticamente tras reinicio
 
-En el panel de Servicios (`services.msc`), busca **CeciChic Print Agent** y verifica que el tipo de inicio sea **Automático**.
+En el panel de Servicios (`services.msc`), busca **GestionCom Print Agent** y verifica que el tipo de inicio sea **Automático**.
 
 ---
 
@@ -201,7 +201,7 @@ En el panel de Servicios (`services.msc`), busca **CeciChic Print Agent** y veri
 
 El log se encuentra en:
 ```
-C:\CeciChic\PrintAgent\logs\agent.log
+C:\GestionCom\PrintAgent\logs\agent.log
 ```
 
 Para cambiar el nivel de detalle, edita `config.json` y cambia `log_level` a `DEBUG`.
@@ -214,4 +214,4 @@ Para cambiar el nivel de detalle, edita `config.json` y cambia `log_level` a `DE
 |--------|-------------|
 | 8765 | Portal web local (configurable) |
 
-El agente solo realiza conexiones salientes hacia el servidor CeciChic. No requiere puertos de entrada abiertos en el firewall.
+El agente solo realiza conexiones salientes hacia el servidor GestionCom. No requiere puertos de entrada abiertos en el firewall.

@@ -1,13 +1,13 @@
-# CeciChic Print Agent
+# GestionCom Print Agent
 
-Agente de impresión térmica para el sistema POS CeciChic. Se ejecuta en el equipo Windows donde está conectada la impresora y se comunica con el servidor central para recibir y ejecutar trabajos de impresión.
+Agente de impresión térmica para el sistema POS GestionCom. Se ejecuta en el equipo Windows donde está conectada la impresora y se comunica con el servidor central para recibir y ejecutar trabajos de impresión.
 
 ---
 
 ## ¿Cómo funciona?
 
 ```
-Servidor CeciChic ◄──────────────────────────────────► Print Agent (Windows)
+Servidor GestionCom ◄──────────────────────────────────► Print Agent (Windows)
                    POST /print/jobs  →  job pendiente
                    GET  /agent/jobs/pending  ←  polling c/2s
                    PATCH /agent/jobs/{code}/status  →  resultado
@@ -67,7 +67,7 @@ PrintAgent/
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `server_url` | string | URL base del servidor CeciChic (ej. `http://192.168.1.100:8000`) |
+| `server_url` | string | URL base del servidor GestionCom (ej. `http://192.168.1.100:8000`) |
 | `printer_api_key` | string | Clave de autorización del punto de venta (`XXXX-XXXX-XXXX-XXXX`) |
 | `printer_name` | string | Nombre de la impresora en Windows o `"auto"` para detección automática |
 | `portal_port` | int | Puerto del portal web local (default `8765`) |

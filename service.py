@@ -20,9 +20,9 @@ try:
 except ImportError:
     pass
 
-SERVICE_NAME = "CeciChicPrintAgent"
-SERVICE_DISPLAY = "CeciChic Print Agent"
-SERVICE_DESC = "Agente de impresión térmica para CeciChic POS"
+SERVICE_NAME = "GestionComPrintAgent"
+SERVICE_DISPLAY = "GestionCom Print Agent"
+SERVICE_DESC = "Agente de impresión térmica para GestionCom POS"
 
 
 if _WIN32_AVAILABLE:

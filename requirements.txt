@@ -1,4 +1,4 @@
-# Agente de impresión térmica CeciChic
+# Agente de impresión térmica GestionCom
 # Instalar con: pip install -r requirements.txt
 
 # Comunicación con el servidor

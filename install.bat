@@ -2,7 +2,7 @@
 setlocal
 
 echo ============================================================
-echo   CeciChic Print Agent - Instalador
+echo   GestionCom Print Agent - Instalador
 echo ============================================================
 echo.
 
@@ -49,7 +49,7 @@ if errorlevel 1 (
     echo [WARN] No se pudo instalar como servicio. Ejecuta como Administrador.
     echo        Puedes usar: python agent.py run   para ejecutar en foreground.
 ) else (
-    echo    Servicio instalado: CeciChicPrintAgent
+    echo    Servicio instalado: GestionComPrintAgent
     echo    Para iniciar: python agent.py start
     echo    O desde Servicios de Windows.
 )
