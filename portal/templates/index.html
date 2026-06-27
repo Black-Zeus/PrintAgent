@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if test_result %}
+  {% if test_result.ok %}
+    <div class="alert alert-ok">✅ Ticket de prueba enviado a la impresora correctamente.</div>
+  {% else %}
+    <div class="alert alert-err">❌ Error al imprimir: {{ test_result.error }}</div>
+  {% endif %}
+{% endif %}
+
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="kpi-val">
+      <span class="dot {% if state.server_reachable %}dot-ok{% else %}dot-err{% endif %}"></span>
+      {{ 'Online' if state.server_reachable else 'Offline' }}
+    </div>
+    <div class="kpi-lbl">Servidor</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-val">
+      <span class="dot {% if state.printer_ok %}dot-ok{% else %}dot-warn{% endif %}"></span>
+      {{ 'OK' if state.printer_ok else 'Sin verificar' }}
+    </div>
+    <div class="kpi-lbl">Impresora</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-val">{{ state.jobs_ok }}</div>
+    <div class="kpi-lbl">Trabajos completados</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-val">{{ state.jobs_failed }}</div>
+    <div class="kpi-lbl">Trabajos fallidos</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Estado del agente</div>
+  <div class="grid-2">
+    <div>
+      <label>Poller</label>
+      <div>
+        <span class="badge {% if state.running %}badge-ok{% else %}badge-err{% endif %}">
+          {{ '▶ Activo' if state.running else '■ Detenido' }}
+        </span>
+      </div>
+    </div>
+    <div>
+      <label>Última consulta</label>
+      <div style="font-size:0.875rem; color:#475569;">{{ state.last_poll or '—' }}</div>
+    </div>
+    <div>
+      <label>Servidor</label>
+      <div class="mono">{{ cfg.server_url }}</div>
+    </div>
+    <div>
+      <label>Impresora configurada</label>
+      <div class="mono">{{ cfg.printer_name }}</div>
+    </div>
+    {% if state.last_job_code %}
+    <div>
+      <label>Último job</label>
+      <div class="mono">{{ state.last_job_code }}</div>
+    </div>
+    <div>
+      <label>Resultado</label>
+      <div>
+        <span class="badge {% if state.last_job_status == 'COMPLETED' %}badge-ok{% elif state.last_job_status == 'FAILED' %}badge-err{% else %}badge-neutral{% endif %}">
+          {{ state.last_job_status or '—' }}
+        </span>
+      </div>
+    </div>
+    {% endif %}
+    {% if state.last_error %}
+    <div style="grid-column: 1/-1;">
+      <label>Último error</label>
+      <div class="mono" style="color:#991b1b;">{{ state.last_error }}</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Acciones</div>
+  <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+    <form method="post" action="/test-print">
+      <button type="submit" class="btn btn-primary">🖨 Imprimir ticket de prueba</button>
+    </form>
+    <a href="/config" class="btn btn-secondary">⚙️ Configuración</a>
+    <a href="/api/status" target="_blank" class="btn btn-secondary">📡 Estado JSON</a>
+  </div>
+</div>
+
+{% if available_printers %}
+<div class="card">
+  <div class="card-title">Impresoras disponibles en este equipo</div>
+  <ul style="list-style:none; display:flex; flex-direction:column; gap:0.375rem;">
+    {% for p in available_printers %}
+    <li style="font-size:0.875rem; font-family:monospace; padding:0.5rem 0.75rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;">
+      {{ p }}
+      {% if p == cfg.printer_name %}<span class="badge badge-ok" style="margin-left:0.5rem;">configurada</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% endblock %}
