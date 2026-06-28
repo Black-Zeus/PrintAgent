@@ -1,30 +1,64 @@
 {% extends "base.html" %}
 {% block content %}
 
-{% if saved %}
-  <div class="alert alert-ok">✅ Configuración guardada correctamente. Reinicia el servicio para aplicar cambios de puerto.</div>
+{# ── Paso 2: confirmación tras test de impresora ───────────────────────────── #}
+{% if pending %}
+<div class="card">
+  <div class="card-title">Confirmar configuración</div>
+
+  {% if print_result.ok %}
+    <div class="alert alert-ok">✅ Ticket de prueba enviado a <strong>{{ pending.printer_name }}</strong>. Revisa la impresora.</div>
+  {% else %}
+    <div class="alert alert-err">❌ No se pudo imprimir: {{ print_result.error }}</div>
+  {% endif %}
+
+  <p style="margin:1rem 0; font-size:0.9rem; color:#374151;">¿El ticket se imprimió correctamente?</p>
+
+  <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+    {# Sí → guardar con los datos pendientes #}
+    <form method="post" action="/config">
+      {% for key, val in pending.items() %}
+        <input type="hidden" name="{{ key }}" value="{{ val }}">
+      {% endfor %}
+      <input type="hidden" name="_confirmed" value="1">
+      <button type="submit" class="btn btn-success">✔ Sí, guardar configuración</button>
+    </form>
+
+    {# No → volver al formulario con los mismos datos para editar #}
+    <a href="/config" class="btn btn-danger">✖ No, volver a editar</a>
+  </div>
+</div>
 {% endif %}
 
+{# ── Paso 1: formulario de configuración ──────────────────────────────────── #}
+{% if not pending %}
 <div class="card">
   <div class="card-title">Configuración del agente</div>
-  <form method="post" action="/config">
-    <div class="grid-2">
-      <div class="form-group" style="grid-column:1/-1;">
-        <label for="server_url">URL del servidor GestionCom</label>
-        <input type="url" id="server_url" name="server_url" value="{{ cfg.server_url }}" placeholder="http://192.168.1.100:8000" required>
+  <form method="post" action="/config/test-printer">
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:1rem;">
+
+      {# Fila 1: servidor (2 col) | clave (2 col) #}
+      <div class="form-group" style="grid-column:span 2;">
+        <label for="server_url">IP o URL del servidor GestionCom</label>
+        <input type="text" id="server_url" name="server_url" value="{{ cfg.server_url }}"
+               placeholder="192.168.1.100" required>
+        <p class="hint">Dirección IP o URL del servidor.</p>
       </div>
 
-      <div class="form-group" style="grid-column:1/-1;">
-        <label for="printer_api_key">Clave de autorización (printer_api_key)</label>
-        <input type="text" id="printer_api_key" name="printer_api_key" value="{{ cfg.printer_api_key }}"
-               placeholder="Generada desde el panel web en Puntos de Venta"
-               style="font-family:monospace; letter-spacing:0.1em;" required>
-        <p style="font-size:0.75rem; color:#64748b; margin-top:0.25rem;">
-          Esta clave se obtiene desde el sistema web en Configuración → Puntos de Venta → Editar → "Generar clave".
-        </p>
+      <div class="form-group" style="grid-column:span 2;">
+        <label for="printer_api_key">Clave de autorización</label>
+        <div class="input-lock-wrap">
+          <input type="text" id="printer_api_key" name="printer_api_key" value="{{ cfg.printer_api_key }}"
+                 placeholder="XXXX-XXXX-XXXX-XXXX"
+                 style="font-family:monospace; letter-spacing:0.08em;"
+                 data-lock required>
+          <button type="button" class="input-lock-btn" title="Haz clic para desbloquear">🔒</button>
+        </div>
+        <p class="hint">Configuración → Puntos de Venta → Editar → "Generar clave".</p>
       </div>
 
-      <div class="form-group">
+      {# Fila 2: impresora (2 col) | puerto (1 col) | intervalo (1 col) #}
+      <div class="form-group" style="grid-column:span 2;">
         <label for="printer_name">Impresora a usar</label>
         {% if available_printers %}
         <select id="printer_name" name="printer_name">
@@ -33,41 +67,148 @@
           <option value="{{ p }}" {% if cfg.printer_name == p %}selected{% endif %}>{{ p }}</option>
           {% endfor %}
         </select>
+        <p class="hint">Seleccione Impresora Termica.</p>
         {% else %}
         <input type="text" id="printer_name" name="printer_name" value="{{ cfg.printer_name }}" placeholder="auto">
-        <p style="font-size:0.75rem; color:#64748b; margin-top:0.25rem;">No se detectaron impresoras locales. Ingresa el nombre manualmente.</p>
+        <p class="hint">No se detectaron impresoras. Ingresa el nombre manualmente.</p>
         {% endif %}
       </div>
 
       <div class="form-group">
-        <label for="poll_interval_seconds">Intervalo de consulta (segundos)</label>
-        <input type="number" id="poll_interval_seconds" name="poll_interval_seconds"
-               value="{{ cfg.poll_interval_seconds }}" min="1" max="30">
+        <label for="portal_port">Puerto del portal</label>
+        <input type="number" id="portal_port" name="portal_port"
+               value="{{ cfg.portal_port }}" min="1" max="65535">
+        <p class="hint">Puerto &lt; 1024 requieren Administrador.<br  />Cambio requiere reinicio.</p>
       </div>
 
       <div class="form-group">
-        <label for="portal_port">Puerto del portal local</label>
-        <input type="number" id="portal_port" name="portal_port"
-               value="{{ cfg.portal_port }}" min="1024" max="65535">
-        <p style="font-size:0.75rem; color:#64748b; margin-top:0.25rem;">Requiere reiniciar el agente.</p>
+        <label for="poll_interval_seconds">Intervalo (seg.)</label>
+        <input type="number" id="poll_interval_seconds" name="poll_interval_seconds"
+               value="{{ cfg.poll_interval_seconds }}" min="1" max="30">
+        <p class="hint">Frecuencia de consulta al servidor.</p>
       </div>
-    </div>
 
-    <div style="display:flex; gap:0.75rem; border-top:1px solid #e2e8f0; padding-top:1rem; margin-top:0.5rem;">
-      <button type="submit" class="btn btn-primary">Guardar configuración</button>
+      {# Fila 3: fuente (2 col) | tamaño (2 col) #}
+      <div class="form-group" style="grid-column:span 2;">
+        <label for="ticket_font">Fuente del ticket (TrueType)</label>
+        <select id="ticket_font" name="ticket_font">
+          {% for fname in ['calibri','arial','tahoma','verdana','courier','segoe'] %}
+          <option value="{{ fname }}" {% if cfg.ticket_font == fname %}selected{% endif %}>
+            {{ fname | capitalize }}{% if fname == 'calibri' %} (recomendado){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+        <p class="hint">Tipo de letra usado en el ticket impreso.</p>
+      </div>
+
+      <div class="form-group" style="grid-column:span 2;">
+        <label for="ticket_font_size">Tamaño de fuente (px)</label>
+        <input type="number" id="ticket_font_size" name="ticket_font_size"
+               value="{{ cfg.ticket_font_size }}" min="10" max="32">
+        <p class="hint">Tamaño de la letra en el ticket impreso.</p>
+      </div>
+
+      {# Fila 4: zona horaria (full width) #}
+      <div class="form-group" style="grid-column:span 4;">
+        <label for="ticket_timezone">Zona horaria para tickets</label>
+        <select id="ticket_timezone" name="ticket_timezone">
+          <option value="">— Auto (usar zona del sistema) —</option>
+          <optgroup label="Sudamérica">
+            <option value="America/Santiago">Chile (Santiago)</option>
+            <option value="America/Argentina/Buenos_Aires">Argentina (Buenos Aires)</option>
+            <option value="America/Lima">Perú (Lima)</option>
+            <option value="America/Bogota">Colombia (Bogotá)</option>
+            <option value="America/Caracas">Venezuela (Caracas)</option>
+            <option value="America/La_Paz">Bolivia (La Paz)</option>
+            <option value="America/Asuncion">Paraguay (Asunción)</option>
+            <option value="America/Montevideo">Uruguay (Montevideo)</option>
+            <option value="America/Guayaquil">Ecuador (Guayaquil)</option>
+          </optgroup>
+          <optgroup label="Norteamérica">
+            <option value="America/Mexico_City">México (Ciudad de México)</option>
+            <option value="America/New_York">EE.UU. (Este — New York)</option>
+            <option value="America/Chicago">EE.UU. (Centro — Chicago)</option>
+            <option value="America/Denver">EE.UU. (Montaña — Denver)</option>
+            <option value="America/Los_Angeles">EE.UU. (Pacífico — Los Ángeles)</option>
+          </optgroup>
+          <optgroup label="Europa">
+            <option value="Europe/Madrid">España (Madrid)</option>
+            <option value="Europe/London">Reino Unido (Londres)</option>
+            <option value="Europe/Paris">Francia / Europa Central</option>
+          </optgroup>
+          <optgroup label="Universal">
+            <option value="UTC">UTC</option>
+          </optgroup>
+        </select>
+        <p class="hint" id="tz-hint">Zona usada para mostrar fecha y hora en los tickets impresos. Si se deja en "Auto", se usa la del sistema operativo del equipo.</p>
+      </div>
+
+    </div>
+    <script>
+      (function () {
+        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const sel = document.getElementById('ticket_timezone');
+        const hint = document.getElementById('tz-hint');
+        hint.textContent = 'Zona detectada por el navegador: ' + detected + '. Si se deja en "Auto", se usa la del sistema operativo.';
+        if (!sel.value) {
+          for (const opt of sel.options) {
+            if (opt.value === detected) { opt.selected = true; break; }
+          }
+        }
+      })();
+    </script>
+
+    <div style="display:flex; gap:0.75rem; justify-content:flex-end; border-top:1px solid var(--sl-200); padding-top:1rem; margin-top:0.5rem;">
       <a href="/" class="btn btn-secondary">Cancelar</a>
+      <button type="submit" class="btn btn-primary">🖨 Probar impresora y guardar</button>
     </div>
   </form>
-</div>
 
+  {% if saved %}
+  <div class="alert alert-ok" style="margin-top:1rem;">✅ Configuración guardada correctamente. Reinicia el agente para aplicar cambios de puerto.</div>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ── Templates sincronizados ──────────────────────────────────────────────── #}
 <div class="card">
-  <div class="card-title">Ayuda rápida</div>
-  <ul style="font-size:0.875rem; color:#475569; list-style:disc; padding-left:1.25rem; line-height:2;">
-    <li>La <strong>URL del servidor</strong> es la misma que usa la aplicación web GestionCom.</li>
-    <li>La <strong>clave de autorización</strong> vincula este agente con un punto de venta específico.</li>
-    <li>Si eliges <strong>Auto-detectar</strong>, el agente buscará la primera impresora con nombre que sugiera ser térmica (XPrinter, Epson TM, etc.).</li>
-    <li>Después de guardar, imprime un <strong>ticket de prueba</strong> para verificar que todo funciona.</li>
-  </ul>
+  <div class="card-title">Templates sincronizados</div>
+  {% if cached_templates %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Nombre</th>
+          <th style="text-align:center;">Versión</th>
+          <th style="text-align:center;">Ancho</th>
+          <th>Última sincronización</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticket_type, tmpl in cached_templates.items() %}
+        <tr>
+          <td><span class="mono" style="font-size:0.78rem;">{{ ticket_type }}</span></td>
+          <td style="font-size:0.85rem; color:var(--sl-700);">{{ tmpl.get('template_name', '—') }}</td>
+          <td style="text-align:center;">
+            <span class="badge badge-ok">v{{ tmpl.get('version', '—') }}</span>
+          </td>
+          <td style="text-align:center; font-size:0.85rem; color:var(--sl-500);">{{ tmpl.get('paper_width_mm', '—') }} mm</td>
+          <td style="font-size:0.82rem; color:var(--sl-500);">
+            {% set synced = tmpl.get('_synced_at') %}
+            {% if synced %}
+              {{ synced | utc_local }}
+            {% else %}
+              <span style="color:var(--sl-300);">Cache previo</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="font-size:0.875rem; color:var(--sl-400); margin:0;">No hay templates en cache. Usa <a href="/tools">Forzar sincronización</a> para descargar desde el servidor.</p>
+  {% endif %}
 </div>
-
 {% endblock %}

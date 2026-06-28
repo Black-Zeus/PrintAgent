@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="kpi-val">{{ stats.total }}</div>
+    <div class="kpi-lbl">Total impresiones</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-val" style="color:var(--success);">{{ stats.completed }}</div>
+    <div class="kpi-lbl">Completadas</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-val" style="color:var(--danger);">{{ stats.failed }}</div>
+    <div class="kpi-lbl">Fallidas</div>
+  </div>
+</div>
+
+{# ── Filtros ─────────────────────────────────────────────────────────────── #}
+<div class="card" style="padding:1rem 1.5rem;">
+  <form method="get" style="display:flex; gap:0.75rem; align-items:flex-end;">
+    <div style="flex:1; min-width:0;">
+      <label style="font-size:0.75rem;">Tipo</label>
+      <select name="type" style="width:100%; height:2.25rem; font-size:0.8rem;">
+        <option value="">Todos</option>
+        <option value="TICKET_VENTA"  {% if f_type == 'TICKET_VENTA'  %}selected{% endif %}>Venta</option>
+        <option value="TICKET_PRUEBA" {% if f_type == 'TICKET_PRUEBA' %}selected{% endif %}>Prueba</option>
+      </select>
+    </div>
+    <div style="flex:2; min-width:0;">
+      <label style="font-size:0.75rem;">Cliente</label>
+      <input type="text" name="company" value="{{ f_company }}" placeholder="Buscar cliente…"
+             style="width:100%; height:2.25rem; font-size:0.8rem;">
+    </div>
+    <div style="flex:1.5; min-width:0;">
+      <label style="font-size:0.75rem;">Desde</label>
+      <input type="date" name="from" value="{{ f_from }}" style="width:100%; height:2.25rem; font-size:0.8rem;">
+    </div>
+    <div style="flex:1.5; min-width:0;">
+      <label style="font-size:0.75rem;">Hasta</label>
+      <input type="date" name="to" value="{{ f_to }}" style="width:100%; height:2.25rem; font-size:0.8rem;">
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:flex-end;">
+      <button type="submit" class="btn btn-primary" style="height:2.25rem; font-size:0.8rem; white-space:nowrap;">Filtrar</button>
+      {% if f_type or f_company or f_from != today or f_to != today %}
+      <a href="/history" class="btn btn-secondary" style="height:2.25rem; font-size:0.8rem; white-space:nowrap;">↩ Hoy</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+{# ── Tabla ────────────────────────────────────────────────────────────────── #}
+<div class="card" style="padding:0;">
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:1.25rem 1.5rem 1rem;">
+    <span class="card-title" style="margin-bottom:0;">Historial de impresiones</span>
+    <span style="font-size:0.72rem; color:var(--sl-500);">
+      {{ rows|length }} registro{{ 's' if rows|length != 1 else '' }} · esta estación
+    </span>
+  </div>
+
+  {% if rows %}
+  <div class="table-wrap" style="border-radius:0; border-left:none; border-right:none; border-bottom:none;">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Fecha</th>
+          <th>N° Ticket</th>
+          <th>Tipo doc.</th>
+          <th>Cliente</th>
+          <th>Total</th>
+          <th style="text-align:center;">Impr.</th>
+          <th style="text-align:center;">Estado</th>
+          <th style="text-align:center;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td style="color:var(--sl-400); font-size:0.7rem;">{{ r.id }}</td>
+
+          <td style="white-space:nowrap; font-size:0.75rem; color:var(--sl-600);">
+            {{ r.printed_at[:16].replace('T',' ') }}
+          </td>
+
+          <td>
+            {% if r.ticket_num %}
+              <span style="font-family:monospace; font-size:0.8rem;">{{ r.ticket_num }}</span>
+            {% else %}
+              <span style="color:var(--sl-300);">—</span>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if r.ticket_type == 'TICKET_VENTA' %}
+              <span class="badge badge-info">Venta</span>
+            {% elif r.ticket_type == 'TICKET_PRUEBA' %}
+              <span class="badge badge-neutral">Prueba</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ r.ticket_type }}</span>
+            {% endif %}
+          </td>
+
+          <td style="font-size:0.8rem; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            {% if r.customer %}{{ r.customer }}{% else %}<span style="color:var(--sl-300);">—</span>{% endif %}
+          </td>
+
+          <td style="font-size:0.8rem; font-weight:600; white-space:nowrap;">
+            {% if r.total and r.total != '' %}
+              {{ r.total | clp }}
+            {% else %}
+              <span style="color:var(--sl-400);">—</span>
+            {% endif %}
+          </td>
+
+          <td style="text-align:center;">
+            {% set cnt = r.print_count if r.print_count else 1 %}
+            {% if cnt > 1 %}
+              <span class="badge badge-warn" title="{{ cnt }} impresiones">{{ cnt }}×</span>
+            {% else %}
+              <span style="font-size:0.75rem; color:var(--sl-400);">1</span>
+            {% endif %}
+          </td>
+
+          <td style="text-align:center;">
+            {% if r.status == 'COMPLETED' %}
+              <span class="badge badge-ok">OK</span>
+            {% elif r.status == 'FAILED' %}
+              <span class="badge badge-err" title="{{ r.error_msg or '' }}">Error</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ r.status }}</span>
+            {% endif %}
+          </td>
+
+          <td style="text-align:center;">
+            {% if r.payload_json %}
+            <form method="post" action="/reprint/{{ r.id }}" style="display:inline;"
+                  onsubmit="confirmReprint(event, this, '{{ r.ticket_num or r.id }}'); return false;">
+              <button type="submit" class="btn btn-secondary"
+                      style="height:1.75rem; padding:0 0.75rem; font-size:0.72rem;">
+                🖨 Reimprimir
+              </button>
+            </form>
+            {% else %}
+            <span style="color:var(--sl-300); font-size:0.75rem;">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="text-align:center; padding:3rem; color:var(--sl-400); font-size:0.875rem;">
+    No hay registros para los filtros seleccionados.
+  </p>
+  {% endif %}
+</div>
+
+{# ── Alertas al fondo ─────────────────────────────────────────────────────── #}
+{% if request.args.get('reprinted') %}
+  <div class="alert alert-ok">✅ Reimpresión enviada correctamente.</div>
+{% endif %}
+{% if request.args.get('reprint_err') %}
+  <div class="alert alert-err">❌ Error al reimprimir: {{ request.args.get('reprint_err') }}</div>
+{% endif %}
+
+<script>
+async function confirmReprint(e, form, ref) {
+  e.preventDefault();
+  const ok = await GCModal.confirm({
+    title:    'Confirmar reimpresión',
+    body:     `¿Desea reimprimir el ticket <strong>${ref}</strong>?`,
+    okLabel:  '🖨 Reimprimir',
+    okClass:  'btn-primary',
+    cancelLabel: 'Cancelar',
+  });
+  if (ok) form.submit();
+}
+</script>
+
+{% endblock %}

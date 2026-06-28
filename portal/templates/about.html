@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if station_logo_url or station_banner_url %}
+<div class="card" style="padding:0; overflow:hidden;">
+  {% if station_banner_url %}
+    <img src="{{ station_banner_url }}" alt="Banner empresa"
+         style="width:100%; max-height:200px; object-fit:cover; object-position:center; display:block;">
+  {% endif %}
+  <div style="display:flex; gap:1.5rem; padding:1.25rem 1.5rem; flex-wrap:wrap;">
+    {% if station_logo_url %}
+    <div style="flex-shrink:0;">
+      <img src="{{ station_logo_url }}" alt="Logo empresa"
+           style="height:64px; width:auto; object-fit:contain; border-radius:6px;">
+    </div>
+    {% endif %}
+
+    <div style="flex:1; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:0.75rem 2rem;">
+      {# Empresa #}
+      {% if station.company_fantasy_name %}
+      <div>
+        <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--sl-400); margin-bottom:0.1rem;">Nombre fantasía</div>
+        <div style="font-weight:700; font-size:0.95rem; color:var(--sl-900);">{{ station.company_fantasy_name }}</div>
+      </div>
+      {% endif %}
+      {% if station.company_name %}
+      <div>
+        <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--sl-400); margin-bottom:0.1rem;">Razón social</div>
+        <div style="font-size:0.85rem; color:var(--sl-700);">{{ station.company_name }}</div>
+      </div>
+      {% endif %}
+      {% if station.company_rut %}
+      <div>
+        <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--sl-400); margin-bottom:0.1rem;">RUT</div>
+        <div style="font-family:monospace; font-size:0.85rem; color:var(--sl-700);">{{ station.company_rut }}</div>
+      </div>
+      {% endif %}
+      {% if station.company_activity_name %}
+      <div>
+        <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--sl-400); margin-bottom:0.1rem;">Giro</div>
+        <div style="font-size:0.8rem; color:var(--sl-600);">{{ station.company_activity_name }}</div>
+      </div>
+      {% endif %}
+      {% if station.company_address %}
+      <div style="grid-column:span 2;">
+        <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--sl-400); margin-bottom:0.1rem;">Dirección</div>
+        <div style="font-size:0.85rem; color:var(--sl-700);">{{ station.company_address }}</div>
+      </div>
+      {% endif %}
+      {% if station.company_region %}
+      <div style="grid-column:span 2;">
+        <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--sl-400); margin-bottom:0.1rem;">Región</div>
+        <div style="font-size:0.85rem; color:var(--sl-700);">{{ station.company_region }}</div>
+      </div>
+      {% endif %}
+
+      {# Punto de venta #}
+      {% if station.sales_point_name %}
+      <div>
+        <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--sl-400); margin-bottom:0.1rem;">Punto de venta</div>
+        <div style="font-size:0.85rem; color:var(--sl-700);">{{ station.sales_point_name }}
+          {% if station.sales_point_code %}
+            <span style="font-family:monospace; font-size:0.72rem; color:var(--sl-400);">({{ station.sales_point_code }})</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+      {% if station.sales_point_location %}
+      <div>
+        <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--sl-400); margin-bottom:0.1rem;">Ubicación</div>
+        <div style="font-size:0.85rem; color:var(--sl-700);">{{ station.sales_point_location }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Sistema ──────────────────────────────────────────────────────────────── #}
+<div class="card">
+  <div class="card-title">Sistema</div>
+  <div class="grid-2">
+    <div>
+      <label>Versión agente</label>
+      <div class="mono">v{{ agent_version }}</div>
+    </div>
+    <div>
+      <label>Python</label>
+      <div class="mono" style="font-size:0.75rem;">{{ python_version.split(' ')[0] }}</div>
+    </div>
+    <div>
+      <label>Plataforma</label>
+      <div class="mono" style="font-size:0.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ platform_info }}</div>
+    </div>
+    <div>
+      <label>Servidor</label>
+      <div class="mono">{{ cfg.server_url or '—' }}</div>
+    </div>
+    <div>
+      <label>Puerto portal</label>
+      <div class="mono">{{ cfg.portal_port }}</div>
+    </div>
+    <div>
+      <label>Impresora</label>
+      <div class="mono">{{ cfg.printer_name or 'auto' }}</div>
+    </div>
+    <div>
+      <label>Intervalo polling</label>
+      <div class="mono">{{ cfg.poll_interval_seconds }}s</div>
+    </div>
+    <div>
+      <label>Fuente ticket</label>
+      <div class="mono">{{ cfg.ticket_font or 'calibri' }} · {{ cfg.ticket_font_size or 24 }}pt</div>
+    </div>
+  </div>
+</div>
+
+{# ── Dependencias ─────────────────────────────────────────────────────────── #}
+<div class="card">
+  <div class="card-title">Dependencias</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Paquete</th>
+          <th>Versión</th>
+          <th style="text-align:center;">Estado</th>
+          <th>Descripción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set deps = [
+          ('Pillow',          pil_ver,      'Renderizado TrueType y barcode en imagen PIL'),
+          ('python-barcode',  barcode_ver,  'Generación de código de barras CODE128'),
+          ('python-escpos',   escpos_ver,   'Comunicación con impresora térmica ESC/POS'),
+          ('Flask',           flask_ver,    'Portal web local del agente'),
+          ('requests',        requests_ver, 'Comunicación HTTP con servidor GestionCom'),
+        ] %}
+        {% for name, ver, desc in deps %}
+        <tr>
+          <td style="font-family:monospace; font-size:0.8rem;">{{ name }}</td>
+          <td>
+            {% if ver %}
+              <span class="mono" style="font-size:0.75rem;">{{ ver }}</span>
+            {% else %}
+              <span style="color:var(--sl-300); font-size:0.75rem;">—</span>
+            {% endif %}
+          </td>
+          <td style="text-align:center;">
+            {% if ver %}
+              <span class="badge badge-ok">OK</span>
+            {% else %}
+              <span class="badge badge-err">No instalado</span>
+            {% endif %}
+          </td>
+          <td style="font-size:0.8rem; color:var(--sl-600);">{{ desc }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Acerca de ────────────────────────────────────────────────────────────── #}
+<div class="card">
+  <div class="card-title">Acerca de GestionCom Print Agent</div>
+  <p style="font-size:0.875rem; color:var(--sl-600); line-height:1.7; margin-bottom:0.75rem;">
+    Agente de impresión térmica para el sistema GestionCom. Ejecuta en segundo plano como servicio Windows,
+    monitorea trabajos de impresión pendientes en el servidor y los envía a la impresora térmica configurada.
+  </p>
+  <p style="font-size:0.875rem; color:var(--sl-600); line-height:1.7;">
+    Soporta impresoras ESC/POS (USB, red, Bluetooth). Los tickets se renderizan como imagen TrueType
+    con fuente configurable y código de barras embebido en la imagen.
+  </p>
+</div>
+
+{% endblock %}
