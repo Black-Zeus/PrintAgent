@@ -1,6 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
 
+{%- macro badge_ticket_type(code) -%}
+  {%- set map = {
+    'TICKET_VENTA':  ('badge-info',    'Venta'),
+    'TICKET_CAMBIO': ('badge-warn',    'Cambio'),
+    'TICKET_PRUEBA': ('badge-neutral', 'Prueba'),
+  } -%}
+  {%- set style, label = map.get(code, ('badge-neutral', code)) -%}
+  <span class="badge {{ style }}">{{ label }}</span>
+{%- endmacro -%}
+
+{%- macro badge_status(status, error_msg='') -%}
+  {%- set map = {
+    'COMPLETED': ('badge-ok',  'OK'),
+    'FAILED':    ('badge-err', 'Error'),
+    'PENDING':   ('badge-warn','Pendiente'),
+  } -%}
+  {%- set style, label = map.get(status, ('badge-neutral', status)) -%}
+  <span class="badge {{ style }}"{% if error_msg %} title="{{ error_msg }}"{% endif %}>{{ label }}</span>
+{%- endmacro -%}
+
 <div class="kpi-row">
   <div class="kpi">
     <div class="kpi-val">{{ stats.total }}</div>
@@ -91,15 +111,7 @@
             {% endif %}
           </td>
 
-          <td>
-            {% if r.ticket_type == 'TICKET_VENTA' %}
-              <span class="badge badge-info">Venta</span>
-            {% elif r.ticket_type == 'TICKET_PRUEBA' %}
-              <span class="badge badge-neutral">Prueba</span>
-            {% else %}
-              <span class="badge badge-neutral">{{ r.ticket_type }}</span>
-            {% endif %}
-          </td>
+          <td>{{ badge_ticket_type(r.ticket_type) }}</td>
 
           <td style="font-size:0.8rem; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
             {% if r.customer %}{{ r.customer }}{% else %}<span style="color:var(--sl-300);">—</span>{% endif %}
@@ -122,15 +134,7 @@
             {% endif %}
           </td>
 
-          <td style="text-align:center;">
-            {% if r.status == 'COMPLETED' %}
-              <span class="badge badge-ok">OK</span>
-            {% elif r.status == 'FAILED' %}
-              <span class="badge badge-err" title="{{ r.error_msg or '' }}">Error</span>
-            {% else %}
-              <span class="badge badge-neutral">{{ r.status }}</span>
-            {% endif %}
-          </td>
+          <td style="text-align:center;">{{ badge_status(r.status, r.error_msg or '') }}</td>
 
           <td style="text-align:center;">
             {% if r.payload_json %}
