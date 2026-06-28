@@ -3,9 +3,10 @@
 
 {%- macro badge_ticket_type(code) -%}
   {%- set map = {
-    'TICKET_VENTA':  ('badge-info',    'Venta'),
-    'TICKET_CAMBIO': ('badge-warn',    'Cambio'),
-    'TICKET_PRUEBA': ('badge-neutral', 'Prueba'),
+    'TICKET_VENTA':      ('badge-info',    'Venta'),
+    'TICKET_CAMBIO':     ('badge-warn',    'Cambio'),
+    'TICKET_DEVOLUCION': ('badge-err',     'Devolución'),
+    'TICKET_PRUEBA':     ('badge-neutral', 'Prueba'),
   } -%}
   {%- set style, label = map.get(code, ('badge-neutral', code)) -%}
   <span class="badge {{ style }}">{{ label }}</span>
@@ -43,8 +44,10 @@
       <label style="font-size:0.75rem;">Tipo</label>
       <select name="type" style="width:100%; height:2.25rem; font-size:0.8rem;">
         <option value="">Todos</option>
-        <option value="TICKET_VENTA"  {% if f_type == 'TICKET_VENTA'  %}selected{% endif %}>Venta</option>
-        <option value="TICKET_PRUEBA" {% if f_type == 'TICKET_PRUEBA' %}selected{% endif %}>Prueba</option>
+        <option value="TICKET_VENTA"      {% if f_type == 'TICKET_VENTA'      %}selected{% endif %}>Venta</option>
+        <option value="TICKET_CAMBIO"     {% if f_type == 'TICKET_CAMBIO'     %}selected{% endif %}>Cambio</option>
+        <option value="TICKET_DEVOLUCION" {% if f_type == 'TICKET_DEVOLUCION' %}selected{% endif %}>Devolución</option>
+        <option value="TICKET_PRUEBA"     {% if f_type == 'TICKET_PRUEBA'     %}selected{% endif %}>Prueba</option>
       </select>
     </div>
     <div style="flex:2; min-width:0;">

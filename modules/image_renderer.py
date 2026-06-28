@@ -495,6 +495,52 @@ def render_venta(payload: dict, template: dict, font_name: str = "calibri", font
     return c.render()
 
 
+def render_devolucion(payload: dict, template: dict, font_name: str = "calibri", font_size: int = 18) -> Optional[Image.Image]:
+    """Ticket de devolución: muestra los productos devueltos y el total a reembolsar."""
+    if not PIL_AVAILABLE:
+        return None
+
+    ctx  = _init_render(template, font_name, font_size)
+    c    = ctx["canvas"]
+    foot = ctx["foot"]
+    fB   = ctx["fonts"]["bold"]
+    fS   = ctx["fonts"]["small"]
+
+    # ── Encabezado ───────────────────────────────────────────────────────────
+    _sec_header(ctx, payload)
+    _sec_doc_id(ctx, payload, "TICKET DE DEVOLUCIÓN")
+
+    # ── Productos devueltos ───────────────────────────────────────────────────
+    return_items = payload.get("return_items", [])
+    c.spacer(6); c.separator(); c.spacer(4)
+    c.text("Productos devueltos", fB, align="center", gap=5); c.spacer(4)
+    _sec_items(ctx, return_items)
+
+    c.separator(); c.spacer(4)
+
+    # ── Totales de la devolución ──────────────────────────────────────────────
+    refund_total = Decimal(str(payload.get("refund_total", 0) or 0))
+
+    if foot.get("show_subtotal"):
+        c.text_lr("Subtotal devuelto:", _clp(payload.get("subtotal", 0)), fS, gap=5)
+    if foot.get("show_tax"):
+        c.text_lr("IVA (19%):", _clp(payload.get("tax", 0)), fS, gap=5)
+    if foot.get("show_total"):
+        c.spacer(4)
+        c.text_lr("TOTAL DEVUELTO:", _clp(refund_total), fB, gap=6)
+        c.spacer(4)
+
+    # ── Pie compartido ────────────────────────────────────────────────────────
+    _sec_payment(ctx, payload)
+    _sec_agreement(ctx, payload)
+    _sec_email(ctx, payload)
+    _sec_footer_msg(ctx)
+    _sec_reprint(ctx, payload)
+    _sec_barcode(ctx, payload)
+    c.spacer(4)
+    return c.render()
+
+
 def render_cambio(payload: dict, template: dict, font_name: str = "calibri", font_size: int = 18) -> Optional[Image.Image]:
     """Ticket de cambio/devolución: sección Devuelto + Recibido + totales propios."""
     if not PIL_AVAILABLE:

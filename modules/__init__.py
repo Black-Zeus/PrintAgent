@@ -8,9 +8,10 @@ import logging
 logger = logging.getLogger("agent.modules")
 
 _MODULE_MAP = {
-    "TICKET_VENTA": "modules.ticket_venta",
-    "TICKET_CAMBIO": "modules.ticket_cambio",
-    "TICKET_PRUEBA": "modules.ticket_prueba",
+    "TICKET_VENTA":      "modules.ticket_venta",
+    "TICKET_CAMBIO":     "modules.ticket_cambio",
+    "TICKET_DEVOLUCION": "modules.ticket_devolucion",
+    "TICKET_PRUEBA":     "modules.ticket_prueba",
 }
 
 
