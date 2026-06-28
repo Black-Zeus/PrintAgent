@@ -10,5 +10,9 @@ python-escpos==3.1
 # Portal web local
 flask==3.1.0
 
+# Renderizado TrueType + barcode en imagen PIL
+Pillow>=10.0.0
+python-barcode>=0.15.1
+
 # Servicio Windows (solo en Windows)
-pywin32==308; sys_platform == "win32"
+pywin32>=308; sys_platform == "win32"

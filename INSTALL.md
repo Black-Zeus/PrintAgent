@@ -3,7 +3,7 @@
 ## Requisitos previos
 
 - Windows 10 o superior (64-bit)
-- Python 3.11 o superior → [python.org/downloads](https://www.python.org/downloads/)
+- Python 3.12 (recomendado) → [python.org/downloads](https://www.python.org/downloads/)
   - Marcar **"Add Python to PATH"** durante la instalación
 - Impresora térmica con driver instalado en Windows (USB, red o Bluetooth)
 - Acceso a la red donde corre el servidor GestionCom
@@ -33,7 +33,7 @@
    - Crea `config.json` con valores por defecto
    - Instala el servicio Windows `GestionComPrintAgent`
 
-5. Una vez instalado, el portal se abre en el navegador en `http://localhost:8765/config`. Completa la configuración (ver sección **Configuración inicial** más abajo).
+5. Una vez instalado, el portal se abre en el navegador en `http://localhost:80/config`. Completa la configuración (ver sección **Configuración inicial** más abajo).
 
 ---
 
@@ -77,7 +77,7 @@ Después de instalar, abre el portal de configuración:
 python agent.py config
 ```
 
-O navega manualmente a `http://localhost:8765/config`.
+O navega manualmente a `http://localhost:80/config`.
 
 Completa los campos:
 
@@ -86,7 +86,7 @@ Completa los campos:
 | URL del servidor | `http://192.168.1.100` o `https://gestion.miempresa.cl` |
 | Clave de autorización | `A1B2-C3D4-E5F6-G7H8` (obtenida desde el sistema en *Puntos de venta → Generar clave*) |
 | Impresora | Selecciona de la lista o usa `auto` para detección automática |
-| Puerto del portal | `8765` (no cambiar salvo conflicto) |
+| Puerto del portal | `80` (no cambiar salvo conflicto) |
 | Intervalo de polling | `2` segundos (recomendado) |
 
 Guarda y vuelve al dashboard `/` para verificar que el agente muestra:
@@ -123,7 +123,7 @@ El log aparece en la consola. Detener con `Ctrl+C`.
 
 ## Prueba de impresión
 
-Desde el dashboard (`http://localhost:8765`) pulsa el botón **"Imprimir ticket de prueba"**. El ticket de prueba muestra la configuración actual del agente.
+Desde el dashboard (`http://localhost:80`) pulsa el botón **"Imprimir ticket de prueba"**. El ticket de prueba muestra la configuración actual del agente.
 
 También puedes generar un ticket de prueba desde el sistema GestionCom en *Templates de impresión*.
 
@@ -212,6 +212,6 @@ Para cambiar el nivel de detalle, edita `config.json` y cambia `log_level` a `DE
 
 | Puerto | Descripción |
 |--------|-------------|
-| 8765 | Portal web local (configurable) |
+| 80 | Portal web local (configurable) |
 
 El agente solo realiza conexiones salientes hacia el servidor GestionCom. No requiere puertos de entrada abiertos en el firewall.

@@ -50,7 +50,7 @@ if _WIN32_AVAILABLE:
 
             poller.start()
 
-            port = config_manager.get("portal_port", 8765)
+            port = config_manager.get("portal_port", 80)
             portal_thread = threading.Thread(
                 target=portal_app.run,
                 kwargs={"port": port},
