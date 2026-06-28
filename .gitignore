@@ -1,5 +1,7 @@
-# Cache de template (generado en runtime)
+# Datos de runtime (generados por el agente en ejecución)
 template_cache.json
+history.db
+media_cache/
 
 # Logs
 logs/
