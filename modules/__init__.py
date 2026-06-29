@@ -12,6 +12,15 @@ _MODULE_MAP = {
     "TICKET_CAMBIO":     "modules.ticket_cambio",
     "TICKET_DEVOLUCION": "modules.ticket_devolucion",
     "TICKET_PRUEBA":     "modules.ticket_prueba",
+    "TICKET_APERTURA":   "modules.ticket_apertura",
+    "TICKET_ARQUEO":     "modules.ticket_arqueo",
+    "TICKET_CIERRE":     "modules.ticket_cierre",
+    "TICKET_ANULACION":  "modules.ticket_anulacion",
+    "TICKET_RETIRO":     "modules.ticket_retiro",
+    "TICKET_INGRESO":    "modules.ticket_ingreso",
+    "TICKET_GASTO":      "modules.ticket_gasto",
+    "TICKET_REPORTE_X":  "modules.ticket_reporte_x",
+    "TICKET_REPORTE_Z":  "modules.ticket_reporte_z",
 }
 
 

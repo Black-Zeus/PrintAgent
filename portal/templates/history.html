@@ -7,6 +7,15 @@
     'TICKET_CAMBIO':     ('badge-warn',    'Cambio'),
     'TICKET_DEVOLUCION': ('badge-err',     'Devolución'),
     'TICKET_PRUEBA':     ('badge-neutral', 'Prueba'),
+    'TICKET_APERTURA':   ('badge-ok',      'Apertura'),
+    'TICKET_ARQUEO':     ('badge-warn',    'Arqueo'),
+    'TICKET_CIERRE':     ('badge-info',    'Cierre'),
+    'TICKET_ANULACION':  ('badge-err',     'Anulación'),
+    'TICKET_RETIRO':     ('badge-warn',    'Retiro'),
+    'TICKET_INGRESO':    ('badge-ok',      'Ingreso'),
+    'TICKET_GASTO':      ('badge-neutral', 'Gasto'),
+    'TICKET_REPORTE_X':  ('badge-info',    'Reporte X'),
+    'TICKET_REPORTE_Z':  ('badge-info',    'Reporte Z'),
   } -%}
   {%- set style, label = map.get(code, ('badge-neutral', code)) -%}
   <span class="badge {{ style }}">{{ label }}</span>
@@ -48,6 +57,15 @@
         <option value="TICKET_CAMBIO"     {% if f_type == 'TICKET_CAMBIO'     %}selected{% endif %}>Cambio</option>
         <option value="TICKET_DEVOLUCION" {% if f_type == 'TICKET_DEVOLUCION' %}selected{% endif %}>Devolución</option>
         <option value="TICKET_PRUEBA"     {% if f_type == 'TICKET_PRUEBA'     %}selected{% endif %}>Prueba</option>
+        <option value="TICKET_APERTURA"   {% if f_type == 'TICKET_APERTURA'   %}selected{% endif %}>Apertura</option>
+        <option value="TICKET_ARQUEO"     {% if f_type == 'TICKET_ARQUEO'     %}selected{% endif %}>Arqueo</option>
+        <option value="TICKET_CIERRE"     {% if f_type == 'TICKET_CIERRE'     %}selected{% endif %}>Cierre</option>
+        <option value="TICKET_ANULACION"  {% if f_type == 'TICKET_ANULACION'  %}selected{% endif %}>Anulación</option>
+        <option value="TICKET_RETIRO"     {% if f_type == 'TICKET_RETIRO'     %}selected{% endif %}>Retiro</option>
+        <option value="TICKET_INGRESO"    {% if f_type == 'TICKET_INGRESO'    %}selected{% endif %}>Ingreso</option>
+        <option value="TICKET_GASTO"      {% if f_type == 'TICKET_GASTO'      %}selected{% endif %}>Gasto</option>
+        <option value="TICKET_REPORTE_X"  {% if f_type == 'TICKET_REPORTE_X'  %}selected{% endif %}>Reporte X</option>
+        <option value="TICKET_REPORTE_Z"  {% if f_type == 'TICKET_REPORTE_Z'  %}selected{% endif %}>Reporte Z</option>
       </select>
     </div>
     <div style="flex:2; min-width:0;">

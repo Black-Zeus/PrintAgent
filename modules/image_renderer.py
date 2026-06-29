@@ -597,3 +597,562 @@ def render_cambio(payload: dict, template: dict, font_name: str = "calibri", fon
     _sec_barcode(ctx, payload)
     c.spacer(4)
     return c.render()
+
+
+def render_apertura(payload: dict, template: dict, font_name: str = "calibri", font_size: int = 18) -> Optional[Image.Image]:
+    """Ticket de apertura de caja: datos de la sesión y monto inicial."""
+    if not PIL_AVAILABLE:
+        return None
+
+    ctx  = _init_render(template, font_name, font_size)
+    c    = ctx["canvas"]
+    body = ctx["body"]
+    fB   = ctx["fonts"]["bold"]
+    fS   = ctx["fonts"]["small"]
+
+    _sec_header(ctx, payload)
+    _sec_doc_id(ctx, payload, "APERTURA DE CAJA")
+    c.separator(); c.spacer(4)
+
+    if payload.get("branch_name"):        c.text_lr("Sucursal:",  payload["branch_name"],        fS, gap=4)
+    if payload.get("cash_register_name"): c.text_lr("Caja:",      payload["cash_register_name"], fS, gap=4)
+    if payload.get("cashier_name"):       c.text_lr("Cajero:",    payload["cashier_name"],        fS, gap=4)
+    if payload.get("supervisor_name"):    c.text_lr("Supervisor:", payload["supervisor_name"],    fS, gap=4)
+
+    c.separator(); c.spacer(4)
+    c.text_lr("MONTO INICIAL:", _clp(payload.get("initial_amount", 0)), fB, gap=6)
+    c.spacer(4)
+
+    if body.get("show_cash_detail"):
+        cash_detail = payload.get("cash_detail", [])
+        if cash_detail:
+            c.separator(); c.spacer(4)
+            c.text("Detalle efectivo inicial", fS, align="center", gap=4)
+            for d in cash_detail:
+                denom = d.get("denomination", 0)
+                qty   = d.get("qty", 0)
+                tot   = d.get("total", denom * qty)
+                c.text_lr(f"  {_clp(denom)} x {qty}", _clp(tot), fS, gap=3)
+
+    if body.get("show_observations"):
+        obs = payload.get("observations", "")
+        c.separator(); c.spacer(4)
+        c.text(f"Obs.: {obs or '—'}", fS, gap=4)
+
+    if body.get("show_signature"):
+        c.separator(); c.spacer(4)
+        c.text("Firma: ___________________________", fS, align="center", gap=6)
+
+    c.spacer(4)
+    return c.render()
+
+
+def render_arqueo(payload: dict, template: dict, font_name: str = "calibri", font_size: int = 18) -> Optional[Image.Image]:
+    """Ticket de arqueo: ventas acumuladas, ajustes y conteo de efectivo."""
+    if not PIL_AVAILABLE:
+        return None
+
+    ctx  = _init_render(template, font_name, font_size)
+    c    = ctx["canvas"]
+    body = ctx["body"]
+    fB   = ctx["fonts"]["bold"]
+    fS   = ctx["fonts"]["small"]
+
+    _sec_header(ctx, payload)
+    _sec_doc_id(ctx, payload, "ARQUEO DE CAJA")
+    c.separator(); c.spacer(4)
+
+    if payload.get("branch_name"):        c.text_lr("Sucursal:", payload["branch_name"],        fS, gap=4)
+    if payload.get("cash_register_name"): c.text_lr("Caja:",     payload["cash_register_name"], fS, gap=4)
+    if payload.get("cashier_name"):       c.text_lr("Cajero:",   payload["cashier_name"],        fS, gap=4)
+    c.text_lr("M. inicial:", _clp(payload.get("initial_amount", 0)), fS, gap=4)
+
+    if body.get("show_sales_by_method"):
+        c.separator(); c.spacer(4)
+        c.text("Ventas por medio de pago", fB, align="center", gap=5)
+        for m in payload.get("sales_by_method", []):
+            c.text_lr(f"  {m.get('method', '')}:", _clp(m.get("amount", 0)), fS, gap=3)
+        c.text_lr("TOTAL VENTAS:", _clp(payload.get("total_sales", 0)), fB, gap=6)
+
+    if body.get("show_adjustments"):
+        c.separator(); c.spacer(4)
+        w    = Decimal(str(payload.get("withdrawals",   0) or 0))
+        dep  = Decimal(str(payload.get("deposits",      0) or 0))
+        canc = Decimal(str(payload.get("cancellations", 0) or 0))
+        ref  = Decimal(str(payload.get("refunds",       0) or 0))
+        if w    > 0: c.text_lr("Retiros:",      f"-{_clp(w)}",    fS, gap=3)
+        if dep  > 0: c.text_lr("Ingresos:",      _clp(dep),        fS, gap=3)
+        if canc > 0: c.text_lr("Anulaciones:",  f"-{_clp(canc)}", fS, gap=3)
+        if ref  > 0: c.text_lr("Devoluciones:", f"-{_clp(ref)}",  fS, gap=3)
+
+    if body.get("show_cash_count"):
+        c.separator(); c.spacer(4)
+        c.text_lr("Efectivo esperado:", _clp(payload.get("expected_cash", 0)), fS, gap=4)
+        c.text_lr("Efectivo contado:",  _clp(payload.get("counted_cash",  0)), fS, gap=4)
+        diff = Decimal(str(payload.get("difference", 0) or 0))
+        c.text_lr("DIFERENCIA:", _clp(diff), fB, gap=6)
+
+    if body.get("show_observations"):
+        obs = payload.get("observations", "")
+        c.separator(); c.spacer(4)
+        c.text(f"Obs.: {obs or '—'}", fS, gap=4)
+
+    if body.get("show_signature"):
+        c.separator(); c.spacer(4)
+        c.text("Firma: ___________________________", fS, align="center", gap=6)
+
+    c.spacer(4)
+    return c.render()
+
+
+def render_cierre(payload: dict, template: dict, font_name: str = "calibri", font_size: int = 18) -> Optional[Image.Image]:
+    """Ticket de cierre de caja: resumen completo de la sesión."""
+    if not PIL_AVAILABLE:
+        return None
+
+    ctx  = _init_render(template, font_name, font_size)
+    c    = ctx["canvas"]
+    body = ctx["body"]
+    fB   = ctx["fonts"]["bold"]
+    fS   = ctx["fonts"]["small"]
+
+    _sec_header(ctx, payload)
+    _sec_doc_id(ctx, payload, "CIERRE DE CAJA")
+    c.separator(); c.spacer(4)
+
+    if payload.get("branch_name"):     c.text_lr("Sucursal:",   payload["branch_name"],     fS, gap=4)
+    caja_line = payload.get("cash_register_name", "")
+    if payload.get("shift"): caja_line += f" / {payload['shift']}"
+    if caja_line:             c.text_lr("Caja:",       caja_line,                   fS, gap=4)
+    if payload.get("cashier_name"):    c.text_lr("Cajero:",     payload["cashier_name"],    fS, gap=4)
+    if payload.get("supervisor_name"): c.text_lr("Supervisor:", payload["supervisor_name"], fS, gap=4)
+    open_d  = payload.get("open_date",  "")
+    close_d = payload.get("close_date", "")
+    if open_d:  c.text_lr("Apertura:", config_manager.utc_to_local(open_d),  fS, gap=4)
+    if close_d: c.text_lr("Cierre:",   config_manager.utc_to_local(close_d), fS, gap=4)
+
+    if body.get("show_sales_by_method"):
+        c.separator(); c.spacer(4)
+        c.text("Ventas por medio de pago", fB, align="center", gap=5)
+        for m in payload.get("sales_by_method", []):
+            c.text_lr(f"  {m.get('method', '')}:", _clp(m.get("amount", 0)), fS, gap=3)
+        c.text_lr("TOTAL VENTAS:", _clp(payload.get("total_sales", 0)), fB, gap=6)
+
+    if body.get("show_adjustments"):
+        c.separator(); c.spacer(4)
+        disc = Decimal(str(payload.get("total_discounts",    0) or 0))
+        ref  = Decimal(str(payload.get("total_refunds",      0) or 0))
+        canc = Decimal(str(payload.get("total_cancellations",0) or 0))
+        w    = Decimal(str(payload.get("total_withdrawals",  0) or 0))
+        dep  = Decimal(str(payload.get("total_deposits",     0) or 0))
+        if disc > 0: c.text_lr("Descuentos:",   f"-{_clp(disc)}", fS, gap=3)
+        if ref  > 0: c.text_lr("Devoluciones:", f"-{_clp(ref)}",  fS, gap=3)
+        if canc > 0: c.text_lr("Anulaciones:",  f"-{_clp(canc)}", fS, gap=3)
+        if w    > 0: c.text_lr("Retiros:",      f"-{_clp(w)}",    fS, gap=3)
+        if dep  > 0: c.text_lr("Ingresos:",      _clp(dep),        fS, gap=3)
+
+    if body.get("show_cash_count"):
+        c.separator(); c.spacer(4)
+        c.text_lr("M. inicial:",        _clp(payload.get("initial_amount",  0)), fS, gap=4)
+        c.text_lr("Efectivo esperado:", _clp(payload.get("expected_cash",   0)), fS, gap=4)
+        c.text_lr("Efectivo declarado:", _clp(payload.get("declared_cash",   0)), fS, gap=4)
+        diff = Decimal(str(payload.get("difference", 0) or 0))
+        c.text_lr("DIFERENCIA:", _clp(diff), fB, gap=5)
+        status = payload.get("close_status", "")
+        if status:
+            c.spacer(4)
+            c.text(f"Estado: {status}", fB, align="center", gap=6)
+
+    if body.get("show_observations"):
+        obs = payload.get("observations", "")
+        c.separator(); c.spacer(4)
+        c.text(f"Obs.: {obs or '—'}", fS, gap=4)
+
+    if body.get("show_signature"):
+        c.separator(); c.spacer(4)
+        c.text("Cajero: ___________________________",    fS, align="center", gap=4)
+        c.text("Supervisor: _______________________",    fS, align="center", gap=6)
+
+    c.spacer(4)
+    return c.render()
+
+
+def render_anulacion(payload: dict, template: dict, font_name: str = "calibri", font_size: int = 18) -> Optional[Image.Image]:
+    """Ticket de anulación de venta: folio original, motivo, autorizador y estado."""
+    if not PIL_AVAILABLE:
+        return None
+
+    ctx  = _init_render(template, font_name, font_size)
+    c    = ctx["canvas"]
+    body = ctx["body"]
+    fB   = ctx["fonts"]["bold"]
+    fS   = ctx["fonts"]["small"]
+
+    _sec_header(ctx, payload)
+    _sec_doc_id(ctx, payload, "ANULACIÓN DE VENTA")
+    c.separator(); c.spacer(4)
+
+    if payload.get("branch_name"):        c.text_lr("Sucursal:", payload["branch_name"],        fS, gap=4)
+    if payload.get("cash_register_name"): c.text_lr("Caja:",     payload["cash_register_name"], fS, gap=4)
+    if payload.get("shift"):              c.text_lr("Turno:",    payload["shift"],               fS, gap=4)
+    if payload.get("cashier_name"):       c.text_lr("Cajero:",   payload["cashier_name"],        fS, gap=4)
+    if body.get("show_original_folio", True):
+        c.text_lr("Folio original:", payload.get("original_folio", "—"), fS, gap=4)
+
+    c.separator(); c.spacer(4)
+    c.text_lr("MONTO ANULADO:", _clp(payload.get("cancelled_amount", 0)), fB, gap=6)
+    c.spacer(4)
+
+    if body.get("show_payment_method", True):
+        method = payload.get("payment_method", "")
+        if method: c.text_lr("Medio de pago:", method, fS, gap=4)
+
+    if body.get("show_reason", True):
+        c.separator(); c.spacer(4)
+        c.text(f"Motivo: {payload.get('reason', '—')}", fS, gap=4)
+
+    if body.get("show_authorizer", True):
+        auth = payload.get("authorizer_name", "")
+        if auth: c.text_lr("Autorizador:", auth, fS, gap=4)
+
+    if body.get("show_status", True):
+        status = payload.get("cancellation_status", "")
+        c.separator(); c.spacer(4)
+        c.text(f"Estado: {status or '—'}", fB, align="center", gap=6)
+
+    c.spacer(4)
+    return c.render()
+
+
+def render_retiro(payload: dict, template: dict, font_name: str = "calibri", font_size: int = 18) -> Optional[Image.Image]:
+    """Ticket de retiro de efectivo: monto, receptor, efectivo antes/después."""
+    if not PIL_AVAILABLE:
+        return None
+
+    ctx  = _init_render(template, font_name, font_size)
+    c    = ctx["canvas"]
+    body = ctx["body"]
+    fB   = ctx["fonts"]["bold"]
+    fS   = ctx["fonts"]["small"]
+
+    _sec_header(ctx, payload)
+    _sec_doc_id(ctx, payload, "RETIRO DE EFECTIVO")
+    c.separator(); c.spacer(4)
+
+    if payload.get("branch_name"):        c.text_lr("Sucursal:", payload["branch_name"],        fS, gap=4)
+    if payload.get("cash_register_name"): c.text_lr("Caja:",     payload["cash_register_name"], fS, gap=4)
+    if payload.get("shift"):              c.text_lr("Turno:",    payload["shift"],               fS, gap=4)
+    if payload.get("cashier_name"):       c.text_lr("Cajero:",   payload["cashier_name"],        fS, gap=4)
+
+    c.separator(); c.spacer(4)
+    c.text_lr("MONTO RETIRADO:", _clp(payload.get("amount", 0)), fB, gap=6)
+    c.spacer(4)
+    c.text(f"Motivo: {payload.get('reason', '—')}", fS, gap=4)
+
+    if body.get("show_receiver", True):
+        recv = payload.get("receiver_name", "")
+        if recv: c.text_lr("Recibe:", recv, fS, gap=4)
+    if body.get("show_authorizer", True):
+        auth = payload.get("authorizer_name", "")
+        if auth: c.text_lr("Supervisor:", auth, fS, gap=4)
+
+    if body.get("show_cash_before_after", True):
+        c.separator(); c.spacer(4)
+        c.text_lr("Efectivo antes:",   _clp(payload.get("cash_before", 0)), fS, gap=4)
+        c.text_lr("Efectivo después:", _clp(payload.get("cash_after",  0)), fS, gap=4)
+
+    if body.get("show_observations", True):
+        obs = payload.get("observations", "")
+        c.separator(); c.spacer(4)
+        c.text(f"Obs.: {obs or '—'}", fS, gap=4)
+
+    if body.get("show_signature", True):
+        c.separator(); c.spacer(4)
+        c.text("Firma: ___________________________", fS, align="center", gap=6)
+
+    c.spacer(4)
+    return c.render()
+
+
+def render_ingreso(payload: dict, template: dict, font_name: str = "calibri", font_size: int = 18) -> Optional[Image.Image]:
+    """Ticket de ingreso manual de efectivo: monto, origen, efectivo antes/después."""
+    if not PIL_AVAILABLE:
+        return None
+
+    ctx  = _init_render(template, font_name, font_size)
+    c    = ctx["canvas"]
+    body = ctx["body"]
+    fB   = ctx["fonts"]["bold"]
+    fS   = ctx["fonts"]["small"]
+
+    _sec_header(ctx, payload)
+    _sec_doc_id(ctx, payload, "INGRESO DE EFECTIVO")
+    c.separator(); c.spacer(4)
+
+    if payload.get("branch_name"):        c.text_lr("Sucursal:", payload["branch_name"],        fS, gap=4)
+    if payload.get("cash_register_name"): c.text_lr("Caja:",     payload["cash_register_name"], fS, gap=4)
+    if payload.get("shift"):              c.text_lr("Turno:",    payload["shift"],               fS, gap=4)
+    if payload.get("cashier_name"):       c.text_lr("Cajero:",   payload["cashier_name"],        fS, gap=4)
+
+    c.separator(); c.spacer(4)
+    c.text_lr("MONTO INGRESADO:", _clp(payload.get("amount", 0)), fB, gap=6)
+    c.spacer(4)
+    c.text(f"Motivo: {payload.get('reason', '—')}", fS, gap=4)
+
+    if body.get("show_deliverer", True):
+        dlv = payload.get("deliverer_name", "")
+        if dlv: c.text_lr("Entrega:", dlv, fS, gap=4)
+    if body.get("show_authorizer", True):
+        auth = payload.get("authorizer_name", "")
+        if auth: c.text_lr("Supervisor:", auth, fS, gap=4)
+
+    if body.get("show_cash_before_after", True):
+        c.separator(); c.spacer(4)
+        c.text_lr("Efectivo antes:",   _clp(payload.get("cash_before", 0)), fS, gap=4)
+        c.text_lr("Efectivo después:", _clp(payload.get("cash_after",  0)), fS, gap=4)
+
+    if body.get("show_observations", True):
+        obs = payload.get("observations", "")
+        c.separator(); c.spacer(4)
+        c.text(f"Obs.: {obs or '—'}", fS, gap=4)
+
+    if body.get("show_signature", True):
+        c.separator(); c.spacer(4)
+        c.text("Firma: ___________________________", fS, align="center", gap=6)
+
+    c.spacer(4)
+    return c.render()
+
+
+def render_gasto(payload: dict, template: dict, font_name: str = "calibri", font_size: int = 18) -> Optional[Image.Image]:
+    """Ticket de gasto menor: concepto, proveedor, efectivo antes/después."""
+    if not PIL_AVAILABLE:
+        return None
+
+    ctx  = _init_render(template, font_name, font_size)
+    c    = ctx["canvas"]
+    body = ctx["body"]
+    fB   = ctx["fonts"]["bold"]
+    fS   = ctx["fonts"]["small"]
+
+    _sec_header(ctx, payload)
+    _sec_doc_id(ctx, payload, "GASTO MENOR")
+    c.separator(); c.spacer(4)
+
+    if payload.get("branch_name"):        c.text_lr("Sucursal:", payload["branch_name"],        fS, gap=4)
+    if payload.get("cash_register_name"): c.text_lr("Caja:",     payload["cash_register_name"], fS, gap=4)
+    if payload.get("shift"):              c.text_lr("Turno:",    payload["shift"],               fS, gap=4)
+    if payload.get("cashier_name"):       c.text_lr("Cajero:",   payload["cashier_name"],        fS, gap=4)
+
+    c.separator(); c.spacer(4)
+    c.text_lr("MONTO:", _clp(payload.get("amount", 0)), fB, gap=6)
+    c.spacer(4)
+    c.text(f"Concepto: {payload.get('concept', '—')}", fS, gap=4)
+
+    if body.get("show_supplier", True):
+        sup = payload.get("supplier", "")
+        if sup: c.text_lr("Proveedor:", sup, fS, gap=4)
+    if body.get("show_associated_doc", False):
+        doc = payload.get("associated_doc", "")
+        if doc: c.text_lr("Doc. asociado:", doc, fS, gap=4)
+    if body.get("show_authorizer", True):
+        auth = payload.get("authorizer_name", "")
+        if auth: c.text_lr("Supervisor:", auth, fS, gap=4)
+
+    if body.get("show_cash_before_after", True):
+        c.separator(); c.spacer(4)
+        c.text_lr("Efectivo antes:",   _clp(payload.get("cash_before", 0)), fS, gap=4)
+        c.text_lr("Efectivo después:", _clp(payload.get("cash_after",  0)), fS, gap=4)
+
+    if body.get("show_observations", True):
+        obs = payload.get("observations", "")
+        c.separator(); c.spacer(4)
+        c.text(f"Obs.: {obs or '—'}", fS, gap=4)
+
+    if body.get("show_signature", True):
+        c.separator(); c.spacer(4)
+        c.text("Firma: ___________________________", fS, align="center", gap=6)
+
+    c.spacer(4)
+    return c.render()
+
+
+def render_reporte_x(payload: dict, template: dict, font_name: str = "calibri", font_size: int = 18) -> Optional[Image.Image]:
+    """Ticket de reporte X: corte parcial informativo sin cerrar caja."""
+    if not PIL_AVAILABLE:
+        return None
+
+    ctx  = _init_render(template, font_name, font_size)
+    c    = ctx["canvas"]
+    body = ctx["body"]
+    fB   = ctx["fonts"]["bold"]
+    fS   = ctx["fonts"]["small"]
+
+    _sec_header(ctx, payload)
+    _sec_doc_id(ctx, payload, "REPORTE X — CORTE PARCIAL")
+    c.separator(); c.spacer(4)
+
+    if payload.get("branch_name"):        c.text_lr("Sucursal:", payload["branch_name"],        fS, gap=4)
+    if payload.get("cash_register_name"): c.text_lr("Caja:",     payload["cash_register_name"], fS, gap=4)
+    if payload.get("shift"):              c.text_lr("Turno:",    payload["shift"],               fS, gap=4)
+    if payload.get("cashier_name"):       c.text_lr("Cajero:",   payload["cashier_name"],        fS, gap=4)
+    open_d = payload.get("open_date", "")
+    if open_d: c.text_lr("Apertura:", config_manager.utc_to_local(open_d), fS, gap=4)
+
+    if body.get("show_sales_by_method", True):
+        c.separator(); c.spacer(4)
+        c.text("Ventas por medio de pago", fB, align="center", gap=5)
+        for m in payload.get("sales_by_method", []):
+            c.text_lr(f"  {m.get('method', '')}:", _clp(m.get("amount", 0)), fS, gap=3)
+        c.text_lr("TOTAL VENTAS:", _clp(payload.get("total_sales", 0)), fB, gap=6)
+
+    c.separator(); c.spacer(4)
+    if body.get("show_cancellations", True):
+        v = Decimal(str(payload.get("total_cancellations", 0) or 0))
+        c.text_lr("Anulaciones:", f"-{_clp(v)}", fS, gap=3)
+    if body.get("show_refunds", True):
+        v = Decimal(str(payload.get("total_refunds", 0) or 0))
+        c.text_lr("Devoluciones:", f"-{_clp(v)}", fS, gap=3)
+    if body.get("show_exchanges", True):
+        v = Decimal(str(payload.get("total_exchanges", 0) or 0))
+        if v: c.text_lr("Cambios:", _clp(v), fS, gap=3)
+    if body.get("show_withdrawals", True):
+        v = Decimal(str(payload.get("total_withdrawals", 0) or 0))
+        if v: c.text_lr("Retiros:", f"-{_clp(v)}", fS, gap=3)
+    if body.get("show_deposits", True):
+        v = Decimal(str(payload.get("total_deposits", 0) or 0))
+        if v: c.text_lr("Ingresos:", _clp(v), fS, gap=3)
+    if body.get("show_expenses", True):
+        v = Decimal(str(payload.get("total_expenses", 0) or 0))
+        if v: c.text_lr("Gastos:", f"-{_clp(v)}", fS, gap=3)
+
+    if body.get("show_cash_count", False):
+        c.separator(); c.spacer(4)
+        c.text_lr("Efectivo esperado:", _clp(payload.get("expected_cash", 0)), fS, gap=4)
+        c.text_lr("Efectivo contado:",  _clp(payload.get("counted_cash",  0)), fS, gap=4)
+        diff = Decimal(str(payload.get("difference", 0) or 0))
+        c.text_lr("DIFERENCIA:", _clp(diff), fB, gap=6)
+    else:
+        c.separator(); c.spacer(4)
+        c.text_lr("Efectivo esperado:", _clp(payload.get("expected_cash", 0)), fB, gap=6)
+
+    c.spacer(4)
+    return c.render()
+
+
+def render_reporte_z(payload: dict, template: dict, font_name: str = "calibri", font_size: int = 18) -> Optional[Image.Image]:
+    """Ticket de reporte Z: cierre consolidado del periodo operativo."""
+    if not PIL_AVAILABLE:
+        return None
+
+    ctx  = _init_render(template, font_name, font_size)
+    c    = ctx["canvas"]
+    body = ctx["body"]
+    fB   = ctx["fonts"]["bold"]
+    fS   = ctx["fonts"]["small"]
+
+    _sec_header(ctx, payload)
+    _sec_doc_id(ctx, payload, "REPORTE Z")
+    c.separator(); c.spacer(4)
+
+    if payload.get("period"):             c.text_lr("Periodo:",  payload["period"],              fS, gap=4)
+    if payload.get("branch_name"):        c.text_lr("Sucursal:", payload["branch_name"],         fS, gap=4)
+    if payload.get("cash_register_name"): c.text_lr("Caja:",     payload["cash_register_name"],  fS, gap=4)
+    if payload.get("shift"):              c.text_lr("Turno:",    payload["shift"],                fS, gap=4)
+    if payload.get("responsible_name"):   c.text_lr("Responsable:", payload["responsible_name"], fS, gap=4)
+
+    if body.get("show_sales_by_method", True):
+        c.separator(); c.spacer(4)
+        c.text("Ventas por medio de pago", fB, align="center", gap=5)
+        for m in payload.get("sales_by_method", []):
+            c.text_lr(f"  {m.get('method', '')}:", _clp(m.get("amount", 0)), fS, gap=3)
+        c.text_lr("TOTAL BRUTO:", _clp(payload.get("gross_total", 0)), fB, gap=6)
+
+    if body.get("show_cancellations", True):
+        c.separator(); c.spacer(4)
+        disc = Decimal(str(payload.get("total_discounts",    0) or 0))
+        ref  = Decimal(str(payload.get("total_refunds",      0) or 0))
+        canc = Decimal(str(payload.get("total_cancellations",0) or 0))
+        if disc > 0: c.text_lr("Descuentos:",   f"-{_clp(disc)}", fS, gap=3)
+        if ref  > 0: c.text_lr("Devoluciones:", f"-{_clp(ref)}",  fS, gap=3)
+        if canc > 0: c.text_lr("Anulaciones:",  f"-{_clp(canc)}", fS, gap=3)
+        c.text_lr("TOTAL NETO:", _clp(payload.get("net_total", 0)), fB, gap=5)
+        tax = Decimal(str(payload.get("tax", 0) or 0))
+        if tax > 0: c.text_lr("IVA (19%):", _clp(tax), fS, gap=4)
+
+    if body.get("show_transaction_count", True):
+        c.separator(); c.spacer(4)
+        c.text_lr("Transacciones:", str(payload.get("transaction_count", 0)), fS, gap=4)
+        c.text_lr("Productos:",     str(payload.get("product_count",     0)), fS, gap=4)
+
+    if body.get("show_adjustments", True):
+        c.separator(); c.spacer(4)
+        w   = Decimal(str(payload.get("total_withdrawals", 0) or 0))
+        dep = Decimal(str(payload.get("total_deposits",    0) or 0))
+        exp = Decimal(str(payload.get("total_expenses",    0) or 0))
+        if w   > 0: c.text_lr("Retiros:", f"-{_clp(w)}",   fS, gap=3)
+        if dep > 0: c.text_lr("Ingresos:", _clp(dep),       fS, gap=3)
+        if exp > 0: c.text_lr("Gastos:",  f"-{_clp(exp)}",  fS, gap=3)
+
+    if body.get("show_cash_count", True):
+        c.separator(); c.spacer(4)
+        c.text_lr("Efectivo esperado:",  _clp(payload.get("expected_cash",  0)), fS, gap=4)
+        c.text_lr("Efectivo declarado:", _clp(payload.get("declared_cash",  0)), fS, gap=4)
+        diff = Decimal(str(payload.get("difference", 0) or 0))
+        c.text_lr("DIFERENCIA:", _clp(diff), fB, gap=5)
+        status = payload.get("close_status", "")
+        if status:
+            c.spacer(4)
+            c.text(f"Estado: {status}", fB, align="center", gap=6)
+
+    c.spacer(4)
+    return c.render()
+
+
+def render_prueba(payload: dict, template: dict, font_name: str = "calibri", font_size: int = 18) -> Optional[Image.Image]:
+    """Ticket de prueba: layout real con 3 productos de muestra, marcado claramente como prueba."""
+    if not PIL_AVAILABLE:
+        return None
+
+    ctx  = _init_render(template, font_name, font_size)
+    c    = ctx["canvas"]
+    foot = ctx["foot"]
+    fB   = ctx["fonts"]["bold"]
+    fS   = ctx["fonts"]["small"]
+
+    # ── Encabezado empresa ────────────────────────────────────────────────────
+    _sec_header(ctx, payload)
+
+    # ── Banner de prueba prominente ───────────────────────────────────────────
+    c.spacer(4); c.separator(); c.spacer(4)
+    c.text("*** TICKET DE PRUEBA ***", fB, align="center", gap=5)
+    c.text("NO ES UNA VENTA REAL", fS, align="center", gap=4)
+    c.separator(); c.spacer(4)
+
+    _sec_doc_id(ctx, payload, "TICKET DE PRUEBA")
+
+    # ── Productos de muestra ──────────────────────────────────────────────────
+    c.spacer(6); c.separator(); c.spacer(4)
+    _sec_items(ctx, payload.get("items", []))
+    c.separator(); c.spacer(4)
+
+    # ── Totales ───────────────────────────────────────────────────────────────
+    if foot.get("show_subtotal"):
+        c.text_lr("Subtotal (neto):", _clp(payload.get("subtotal", 0)), fS, gap=5)
+    if foot.get("show_tax"):
+        c.text_lr("IVA (19%):", _clp(payload.get("tax", 0)), fS, gap=5)
+    if foot.get("show_total"):
+        c.spacer(4)
+        c.text_lr("TOTAL:", _clp(payload.get("total_amount", 0)), fB, gap=6)
+        c.spacer(4)
+
+    # ── Info diagnóstico ──────────────────────────────────────────────────────
+    c.separator(); c.spacer(4)
+    c.text(f"Template:  {payload.get('template_code', '—')}  v{payload.get('template_version', '—')}", fS, gap=4)
+    c.text(f"Fuente:    {font_name}  {font_size}px", fS, gap=4)
+    c.text(f"Impres.:   {payload.get('printer_name', '—')}", fS, gap=4)
+    c.separator(); c.spacer(4)
+    c.text("Si ves este ticket,", fS, align="center", gap=3)
+    c.text("el agente funciona OK.", fB, align="center", gap=6)
+    c.spacer(4)
+    return c.render()
