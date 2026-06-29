@@ -212,17 +212,32 @@ def print_test(printer_name: Optional[str] = None,
     if p is None:
         return {"ok": False, "error": f"No se pudo abrir impresora '{printer_name}'"}
 
-    template = template_manager.get_current("TICKET_VENTA")
+    template = template_manager.get_current("TICKET_PRUEBA") or template_manager.get_current("TICKET_VENTA")
     s = station.fetch()
+    sample_items = [
+        {"name": "Producto de muestra A", "quantity": 2, "unit_price": 12990, "discount_percent": 0, "total": 25980},
+        {"name": "Artículo de muestra B",  "quantity": 1, "unit_price": 8900,  "discount_percent": 0, "total": 8900},
+        {"name": "Ítem de muestra C",      "quantity": 3, "unit_price": 5990,  "discount_percent": 0, "total": 17970},
+    ]
+    sample_gross  = sum(i["total"] for i in sample_items)
+    sample_net    = round(sample_gross / 1.19)
+    sample_tax    = sample_gross - sample_net
     test_payload = {
         "company": {
             "name":         s.get("company_name", ""),
             "fantasy_name": s.get("company_fantasy_name", ""),
-            "rut":          "",
-            "address":      "",
+            "rut":          s.get("company_rut", ""),
+            "address":      s.get("company_address", ""),
             "logo_url":     s.get("logo_url"),
             "banner_url":   s.get("banner_url"),
         },
+        "print_date":       datetime.now(timezone.utc).isoformat(),
+        "ticket_number":    "T-00000",
+        "items":            sample_items,
+        "subtotal":         sample_net,
+        "tax":              sample_tax,
+        "total_amount":     sample_gross,
+        "payment_method":   "Efectivo (prueba)",
         "server_url":       cfg.get("server_url", ""),
         "printer_name":     printer_name,
         "template_version": template.get("version", "—"),

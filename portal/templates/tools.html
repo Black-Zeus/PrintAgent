@@ -37,11 +37,11 @@
   </p>
   <div style="display:flex; gap:0.75rem; flex-wrap:wrap; text-align:center; justify-content:center;">
     <button type="button" class="btn btn-secondary" onclick="showStatusJson()">📡 Estado JSON</button>
-    <form method="post" action="/restart">
-      <button type="submit" class="btn btn-secondary">🔄 Reiniciar agente</button>
+    <form id="restart-form" method="post" action="/restart">
+      <button type="button" class="btn btn-secondary" onclick="confirmRestart()">🔄 Reiniciar agente</button>
     </form>
-    <form method="post" action="/shutdown" onsubmit="return confirm('¿Detener el agente por completo?')">
-      <button type="submit" class="btn btn-danger">⏹ Detener agente</button>
+    <form id="shutdown-form" method="post" action="/shutdown">
+      <button type="button" class="btn btn-danger" onclick="confirmShutdown()">⏹ Detener agente</button>
     </form>
   </div>
 </div>
@@ -154,6 +154,28 @@ _jsonBackdrop.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeStatusJson();
 });
+
+async function confirmRestart() {
+  const ok = await GCModal.confirm({
+    title: 'Reiniciar agente',
+    body: '¿Reiniciar el agente? Se aplicarán los cambios de configuración pendientes.',
+    okLabel: 'Reiniciar',
+    okClass: 'btn-secondary',
+    cancelLabel: 'Cancelar',
+  });
+  if (ok) document.getElementById('restart-form').submit();
+}
+
+async function confirmShutdown() {
+  const ok = await GCModal.confirm({
+    title: 'Detener agente',
+    body: '¿Detener el agente por completo? El portal dejará de responder.',
+    okLabel: 'Detener',
+    okClass: 'btn-danger',
+    cancelLabel: 'Cancelar',
+  });
+  if (ok) document.getElementById('shutdown-form').submit();
+}
 </script>
 
 {% endblock %}

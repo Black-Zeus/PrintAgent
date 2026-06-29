@@ -161,9 +161,11 @@ def check_and_update_all() -> tuple[bool, dict[str, dict]]:
             return False, get_all()
 
         server_list = resp.json().get("data", [])
+        server_active = {e["template_code"].upper() for e in server_list if e.get("template_code")}
         cached = load_all_cached()
         updated_any = False
 
+        # Descargar templates nuevos o con versión cambiada
         for entry in server_list:
             code = entry.get("template_code")
             server_ver = entry.get("version")
@@ -176,6 +178,15 @@ def check_and_update_all() -> tuple[bool, dict[str, dict]]:
                 if ok:
                     cached[code] = tmpl
                     updated_any = True
+
+        # Eliminar del cache los tipos que ya no están activos en el servidor
+        obsolete = [code for code in list(cached.keys()) if code not in server_active]
+        if obsolete:
+            for code in obsolete:
+                del cached[code]
+            _save_all_cache(cached)
+            logger.info("Templates obsoletos eliminados del cache: %s", ", ".join(obsolete))
+            updated_any = True
 
         return updated_any, cached if cached else get_all()
 
@@ -215,6 +226,7 @@ def force_update_all() -> tuple[bool, dict[str, dict], str]:
         if not server_list:
             return False, get_all(), "El servidor no tiene templates activos"
 
+        server_active = {e["template_code"].upper() for e in server_list if e.get("template_code")}
         cached = load_all_cached()
         downloaded: list[str] = []
 
@@ -227,6 +239,11 @@ def force_update_all() -> tuple[bool, dict[str, dict], str]:
                 cached[code] = tmpl
                 time_str = config_manager.utc_to_local(tmpl.get("_synced_at", ""), fmt="%H:%M:%S")
                 downloaded.append(f"{code}|v{tmpl.get('version', '?')}|{time_str}")
+
+        # Eliminar del cache los tipos que ya no están activos en el servidor
+        for code in [c for c in list(cached.keys()) if c not in server_active]:
+            del cached[code]
+            logger.info("Template obsoleto eliminado del cache: %s", code)
 
         if downloaded:
             return True, cached, ";;".join(downloaded)
